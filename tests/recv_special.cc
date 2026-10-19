@@ -201,6 +201,22 @@ int main()
     }
 
     {
+      TCPReceiverTestHarness test { "payload overlaps SYN position", 10 };
+      const uint32_t isn = 1000;
+
+      test.execute( SegmentArrives {}.with_syn().with_seqno( isn ) );
+      test.execute( ExpectAckno { Wrap32 { isn + 1 } } );
+
+      test.execute( SegmentArrives {}.with_seqno( isn ).with_data( "Xabc" ) );
+
+      test.execute( BytesPushed { 3 } );
+      test.execute( BytesPending { 0 } );
+      test.execute( ExpectAckno { Wrap32 { isn + 4 } } );
+      test.execute( ReadAll { "abc" } );
+      test.execute( IsClosed { false } );
+    }
+
+    {
       // test credit: Majd Nasra
       ReassemblerTestHarness test { "segment already seen in full", 3 };
 
